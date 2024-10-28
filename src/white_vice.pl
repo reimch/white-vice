@@ -19,7 +19,7 @@ sub str_replace {
 	return $string;
 }
 
-my $port = 8080;
+my $port = 7777;
 socket(SOCK, PF_INET,SOCK_STREAM, getprotobyname('tcp')) or die ("Не могу создать сокет!");
 setsockopt(SOCK, SOL_SOCKET, SO_REUSEADDR, 1);
 
