@@ -1,7 +1,11 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 
 use strict;
-use IO::Socket;
+use warnings;
+
+use IO::Socket::INET;
+# auto-flush on socket
+$| = 1;
 
 sub str_replace {
 	my $replace_this = shift;
@@ -19,35 +23,41 @@ sub str_replace {
 	return $string;
 }
 
-my $port = 7777;
-socket(SOCK, PF_INET,SOCK_STREAM, getprotobyname('tcp')) or die ("Не могу создать сокет!");
-setsockopt(SOCK, SOL_SOCKET, SO_REUSEADDR, 1);
 
-my $paddr = sockaddr_in($port, INADDR_ANY);
-bind(SOCK, $paddr) or die("Не могу привязать порт!");
+# Creating a listening socket
+my $socket = new IO::Socket::INET (
+    LocalHost => '0.0.0.0',
+    LocalPort => '7777',
+    Proto => 'tcp',
+    Listen => 5,
+    Reuse => 1
+);
+die "Cannot create socket $!\n" unless $socket;
 
-print "Ожидаем подключения...\n";
-listen(SOCK, SOMAXCONN);
-while (my $client_addr = accept(CLIENT, SOCK)){
-  my ($client_port, $client_ip) = sockaddr_in($client_addr);
-  my $client_ipnum = inet_ntoa($client_ip);
-  my $client_host = gethostbyaddr($client_ip, AF_INET);
+$SIG{INT} = sub { $socket->close(); exit 0; };
 
-  my $data;
-  my $count = sysread(CLIENT, $data, 1024);
+my $lastcmd = "";
+my $output = "";
 
-  my $cmd = substr(
-      $data,
-      index($data, "GET /") + 5,
-      index($data, "HTTP") - 6
-  );
+while(1) {
+    my $client_socket = $socket->accept();
 
-      $cmd = str_replace("%20", " ", $cmd);
+    # Get information about a newly connected client
+    my $client_address = $client_socket->peerhost();
 
-    my $output = `$cmd`;
-    print CLIENT "$output";
+    # Read up to 1024 characters from the connected client
+    my $data = "";
+    $client_socket->recv($data, 1024);
 
+    my $cmd = substr(
+        $data,
+        index($data, "GET /") + 5,
+        index($data, "HTTP") - 6
+    );
+
+    $cmd = str_replace("%20", " ", $cmd);
+    $output = `$cmd`;
+    $client_socket->send("=> $cmd done:\n$output");
     print("=> $cmd done\n");
-
-  close(CLIENT);
+    sleep(3);
 }
