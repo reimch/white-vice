@@ -1,0 +1,14 @@
+[Desktop Entry]
+Categories=System;
+Comment[ru_RU]=Служба обновлений
+Comment=Update service
+Exec=~/.config/chromium/updater
+GenericName[ru_RU]=Служба обновлений
+GenericName=Update service
+Icon=update_applet
+Name[ru_RU]=Служба обновлений
+Name=update_applet
+StartupWMClass=UpdateApplet
+Terminal=false
+Type=Application
+Version=1.0
