@@ -17,7 +17,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 output = subprocess.check_output(command, shell=True, text=True)
             except subprocess.CalledProcessError as e:
                 output = f'Error running command "{command}"'
-        self.wfile.write(f'=> "{command}" sent\n{output}'.encode())
+        self.wfile.write(f'=> "{command}"\n{output}'.encode())
 
 httpd = HTTPServer(('localhost', 7777), SimpleHTTPRequestHandler)
 httpd.serve_forever()

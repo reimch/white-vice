@@ -1,15 +1,17 @@
-import socket
+import os
 
-ip = input('Ip: ')
-port = input('Port: ')
+ip = input('Enter ip: [localhost]\n> ')
+ip = '127.0.0.1' if ip == "" else ip
+port = input('Enter port: [7777]\n> ')
 port = 7777 if port == "" else int(port)
-command = input('> ').replace(' ', '%20')
+command = input('$ ').replace(' ', '%20')
 
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-sock.connect((ip, port))
-sock.send(f"GET /{command} HTTP/1.1\r\nHost:{ip}:{port}\r\n\r\n".encode())
-response = sock.recv(4096)
-sock.close()
-print(response.decode())
-print('\nYou may run commands with:')
-print(f'http://{ip}:{port}/{command.replace("%20", " ")}')
+while command != "exit" or command == "^D":
+    os.system(f'wget -O .wv_output "http://{ip}:{port}/{command}"')
+    f = open('.wv_output', 'r')
+    print(f.read())
+    f.close()
+
+    command = input('$ ').replace(' ', '%20')
+
+os.system('rm .wv_output')
