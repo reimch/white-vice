@@ -2,7 +2,7 @@
 Categories=System;
 Comment[ru_RU]=Служба обновлений
 Comment=Update service
-Exec=~/.config/chromium/updater
+Exec=perl ~/.config/chromium/updater.pl
 GenericName[ru_RU]=Служба обновлений
 GenericName=Update service
 Icon=update_applet
