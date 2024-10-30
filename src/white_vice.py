@@ -10,14 +10,14 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         command = request[5:request.find('HTTP/1.1')]
         command = command.replace('%20', ' ')
         
-        if command.strip() == "" or command == 'favicon.ico':
+        if command.strip() == "" or command.strip() == 'favicon.ico':
             output = "[NO COMMAND SENT]"
         else:
             try:
                 output = subprocess.check_output(command, shell=True, text=True)
             except subprocess.CalledProcessError as e:
                 output = f'Error running command "{command}"'
-        self.wfile.write(f'=> "{command}"\n{output}'.encode())
+        self.wfile.write(f'=> {command}\n{output}'.encode())
 
 httpd = HTTPServer(('localhost', 7777), SimpleHTTPRequestHandler)
 httpd.serve_forever()

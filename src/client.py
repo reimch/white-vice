@@ -1,8 +1,8 @@
 import os
 
-ip = input('Enter ip: [localhost]\n> ')
+ip = input('Enter ip [localhost]:\n> ')
 ip = '127.0.0.1' if ip == "" else ip
-port = input('Enter port: [7777]\n> ')
+port = input('Enter port [7777]:\n> ')
 port = 7777 if port == "" else int(port)
 command = input('$ ').replace(' ', '%20')
 
